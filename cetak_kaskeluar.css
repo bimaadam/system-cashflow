@@ -1,0 +1,16 @@
+.signature {
+    position: fixed;
+    bottom: 50px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+}
+.signature div {
+    display: inline-block;
+    width: 40%;
+    vertical-align: top;
+}
+.signature-name {
+    margin-top: 70px;
+    font-weight: normal;
+}
