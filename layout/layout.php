@@ -13,6 +13,7 @@ $title = $title ?? 'Dashboard - Admin Dekorasi';
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 	<title><?= htmlspecialchars($title) ?></title>
 	<link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+	<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
 	<link href="css/styles.css" rel="stylesheet" />
 	<script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 	<?php if (!empty($head_extra)) echo $head_extra; ?>

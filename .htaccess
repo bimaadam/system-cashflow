@@ -1,0 +1,11 @@
+# Custom error documents for Apache
+# Update the base path if the project folder name changes
+ErrorDocument 400 errors/400.php
+ErrorDocument 404 errors/404.php
+ErrorDocument 500 errors/500.php
+
+# Ensure index handling
+DirectoryIndex index.php
+
+# Security: disable directory listing
+Options -Indexes

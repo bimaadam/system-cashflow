@@ -46,6 +46,38 @@
         </div>
     </div>
 
+    <div class="card mb-3">
+        <div class="card-body">
+            <form class="row g-3 align-items-end" method="GET" action="cetakbooking.php" target="_blank">
+                <?php $nowMonth = date('m'); $nowYear = date('Y'); ?>
+                <div class="col-sm-3 col-md-2">
+                    <label class="form-label">Bulan</label>
+                    <select name="bulan" class="form-select">
+                        <?php for ($m=1; $m<=12; $m++): $mm = sprintf('%02d', $m); ?>
+                            <option value="<?= $mm ?>" <?= $mm==$nowMonth?'selected':'' ?>><?= $mm ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                <div class="col-sm-4 col-md-3">
+                    <label class="form-label">Tahun</label>
+                    <select name="tahun" class="form-select">
+                        <?php for ($y=$nowYear-3; $y<=$nowYear+1; $y++): ?>
+                            <option value="<?= $y ?>" <?= $y==$nowYear?'selected':'' ?>><?= $y ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                <div class="col-sm-5 col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-file-pdf me-1"></i> Export Booking (PDF)
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">
             <i class="fas fa-table me-1"></i> Data Booking Graceful Dekorasi

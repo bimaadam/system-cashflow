@@ -6,6 +6,27 @@
         <h4 class="mb-0">Kas Masuk</h4>
     </div>
 
+    <!-- FILTER EVENT -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" class="row g-2 align-items-end">
+                <input type="hidden" name="tab" value="kas_masuk" />
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <label class="form-label">Cari Event</label>
+                    <input type="text" name="event" value="<?= isset($_GET['event']) ? htmlspecialchars($_GET['event']) : '' ?>" class="form-control" placeholder="Cari..." />
+                </div>
+                <div class="col-sm-6 col-md-3 col-lg-2 d-grid">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-outline-primary"><i class="fas fa-search me-1"></i> Filter</button>
+                </div>
+                <div class="col-sm-6 col-md-3 col-lg-2 d-grid">
+                    <label class="form-label">&nbsp;</label>
+                    <a class="btn btn-outline-secondary" href="dashboard.php?tab=kas_masuk"><i class="fas fa-undo me-1"></i> Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- FORM INPUT KAS MASUK -->
     <form method="POST" action="functions/kas_masuk_tambah.php">
         <input type="hidden" name="redirect" value="dashboard.php?tab=kas_masuk">
@@ -63,8 +84,21 @@
                     </thead>
                     <tbody>
                         <?php
-                        $data_event = mysqli_query($conn, "SELECT * FROM penerimaan_kas ORDER BY Tanggal_Input DESC");
-                        while ($row = mysqli_fetch_assoc($data_event)) {
+                        $eventFilter = isset($_GET['event']) ? trim($_GET['event']) : '';
+                        if ($eventFilter !== '') {
+                            $sql = "SELECT * FROM penerimaan_kas WHERE Event_WLE LIKE CONCAT('%', ?, '%') ORDER BY Tanggal_Input DESC";
+                            if ($stmt = mysqli_prepare($conn, $sql)) {
+                                mysqli_stmt_bind_param($stmt, 's', $eventFilter);
+                                mysqli_stmt_execute($stmt);
+                                $result = mysqli_stmt_get_result($stmt);
+                            } else {
+                                $result = false;
+                            }
+                        } else {
+                            $result = mysqli_query($conn, "SELECT * FROM penerimaan_kas ORDER BY Tanggal_Input DESC");
+                        }
+
+                        while ($result && ($row = mysqli_fetch_assoc($result))) {
                             echo "<tr>
                                 <td>{$row['Tanggal_Input']}</td>
                                 <td>{$row['Event_WLE']}</td>
@@ -83,6 +117,7 @@
                                 </td>
                             </tr>";
                         }
+                        if (isset($stmt) && $stmt) { mysqli_stmt_close($stmt); }
                         ?>
                     </tbody>
                 </table>

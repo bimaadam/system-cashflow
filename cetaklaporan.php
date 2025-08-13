@@ -7,7 +7,6 @@ if (!class_exists('Mpdf\\Mpdf')) {
 }
 
 use Mpdf\Mpdf;
-
 $mpdfTmp = __DIR__ . '/tmp';
 if (!is_dir($mpdfTmp)) {
     @mkdir($mpdfTmp, 0777, true);
@@ -16,11 +15,26 @@ if (!is_writable($mpdfTmp)) {
     @chmod($mpdfTmp, 0777);
 }
 
+// Embed Edwardian Script ITC font if available
+$fontDir = __DIR__ . '/assets/fonts';
+$brandTtf = $fontDir . '/edwardianscriptitc.ttf';
+
+$mpdfOptions = [
+    'format' => 'A4',
+    'tempDir' => $mpdfTmp,
+];
+
+if (is_file($brandTtf)) {
+    $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+    $fontDirs = $defaultConfig['fontDir'];
+    $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+    $fontData = $defaultFontConfig['fontdata'];
+    $mpdfOptions['fontDir'] = array_merge($fontDirs, [$fontDir]);
+    $mpdfOptions['fontdata'] = $fontData + [ 'edwardian' => ['R' => basename($brandTtf)] ];
+}
+
 try {
-    $mpdf = new Mpdf([
-        'format' => 'A4',
-        'tempDir' => $mpdfTmp,
-    ]);
+    $mpdf = new Mpdf($mpdfOptions);
 } catch (\Throwable $e) {
     http_response_code(500);
     die('mPDF init error: ' . htmlspecialchars($e->getMessage()));
@@ -36,18 +50,41 @@ $nama_bulan_map = [
     '05' => 'Mei','06' => 'Juni','07' => 'Juli','08' => 'Agustus',
     '09' => 'September','10' => 'Oktober','11' => 'November','12' => 'Desember'
 ];
+$eventFilter = isset($_GET['event']) ? trim($_GET['event']) : '';
 $bulan_format = ($nama_bulan_map[$bulan] ?? date('F', strtotime($start_month))) . ' ' . $tahun;
 
-$kas_masuk = mysqli_query($conn, "SELECT * FROM penerimaan_kas 
-    WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
-    ORDER BY Tanggal_Input ASC");
-
-$kas_keluar = mysqli_query($conn, "SELECT * FROM pengeluaran_kas 
-    WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
-    ORDER BY Tanggal_Input ASC");
-
-$total_masuk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM penerimaan_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
-$total_keluar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM pengeluaran_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
+// Build queries with optional event filter using prepared statements
+if ($eventFilter !== '') {
+    $like = "%" . $eventFilter . "%";
+    // Kas Masuk list
+    $stmtMasuk = mysqli_prepare($conn, "SELECT * FROM penerimaan_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ? ORDER BY Tanggal_Input ASC");
+    mysqli_stmt_bind_param($stmtMasuk, 'sss', $start_month, $next_month, $like);
+    mysqli_stmt_execute($stmtMasuk);
+    $kas_masuk = mysqli_stmt_get_result($stmtMasuk);
+    // Kas Keluar list
+    $stmtKeluar = mysqli_prepare($conn, "SELECT * FROM pengeluaran_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ? ORDER BY Tanggal_Input ASC");
+    mysqli_stmt_bind_param($stmtKeluar, 'sss', $start_month, $next_month, $like);
+    mysqli_stmt_execute($stmtKeluar);
+    $kas_keluar = mysqli_stmt_get_result($stmtKeluar);
+    // Totals
+    $stmtTotMasuk = mysqli_prepare($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM penerimaan_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ?");
+    mysqli_stmt_bind_param($stmtTotMasuk, 'sss', $start_month, $next_month, $like);
+    mysqli_stmt_execute($stmtTotMasuk);
+    $total_masuk = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtTotMasuk));
+    $stmtTotKeluar = mysqli_prepare($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM pengeluaran_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ?");
+    mysqli_stmt_bind_param($stmtTotKeluar, 'sss', $start_month, $next_month, $like);
+    mysqli_stmt_execute($stmtTotKeluar);
+    $total_keluar = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtTotKeluar));
+} else {
+    $kas_masuk = mysqli_query($conn, "SELECT * FROM penerimaan_kas 
+        WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
+        ORDER BY Tanggal_Input ASC");
+    $kas_keluar = mysqli_query($conn, "SELECT * FROM pengeluaran_kas 
+        WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
+        ORDER BY Tanggal_Input ASC");
+    $total_masuk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM penerimaan_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
+    $total_keluar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM pengeluaran_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
+}
 
 ob_start(); ?>
 
@@ -68,17 +105,19 @@ ob_start(); ?>
 </head>
 <body>
 
-<div class="header">
-    <?php 
-        $logo_file = __DIR__ . '/logo_graceful.png';
-        $logo_src = file_exists($logo_file) ? ('file:        if ($logo_src) { echo '<img src="' . $logo_src . '" class="logo" alt="Logo Graceful"><br>'; }
-    ?>
-        <h2>Laporan Keuangan</h2>
-    <div class="alamat"><p style="font-style: italic; margin: 5px 0;">
+<div class="kop-laporan" style="text-align: center;">
+  <h1 style="font-family: 'edwardian','Edwardian Script ITC', cursive; font-size: 64px; margin: 0;">Graceful</h1>
+  <p style="font-style: italic; margin: 5px 0;">
     Kampung <u>Tanjungjaya</u>, Desa Dawagung, <u>Kecamatan</u> Rajapolah, <u>Kabupaten Tasikmalaya</u>, 46155<br>
     No HP 087833379235 <u>Email</u>: gracefuldecoration@gmail.com
-  </p></div>
-    <div>Bulan: <?= htmlspecialchars($bulan_format) ?></div>
+  </p>
+  <hr style="border: 2px solid black; margin: 10px 0 0 0;">
+  <div style="font-weight: bold; font-size: 18px; margin-top: -12px;">
+    <h3><u>LAPORAN KEUANGAN BULAN <?= strtoupper($bulan_format) ?></u></h3>
+  </div>
+  <?php if ($eventFilter !== ''): ?>
+    <div style="margin-top:4px; font-size: 11pt;">Filter Event: <strong><?= htmlspecialchars($eventFilter) ?></strong></div>
+  <?php endif; ?>
 </div>
 
 <!-- Kas Masuk -->
