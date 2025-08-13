@@ -1,158 +1,105 @@
-# Cashflow Management System - Dekorasi Graceful
+# Sistem Manajemen Keuangan Dekorasi – untuk Klien: Dwiyanti Halimah
 
-## Deskripsi
-Sistem manajemen keuangan untuk bisnis dekorasi yang telah diperbarui dengan UI/UX modern dan struktur kode yang lebih baik.
+Dokumen ini merangkum gambaran proyek, cara menjalankan, struktur file, dan alur penggunaan. Disusun singkat, jelas, dan siap dipakai saat seminar proposal.
 
-## Peningkatan yang Dilakukan
+## Ringkasan Proyek
+- __Tujuan__: Mencatat dan memantau keuangan (Kas Masuk, Kas Keluar), Jadwal Booking, serta mencetak laporan PDF bulanan.
+- __Peran Pengguna__: Admin (login), mengelola transaksi dan booking, melihat ringkasan dashboard.
+- __Teknologi__: PHP + MySQL, Bootstrap 5, Font Awesome, mPDF untuk PDF.
 
-### 1. **Perbaikan UI/UX**
-- **Desain Modern**: Menggunakan gradient background dan glassmorphism effect
-- **Responsif**: Tampilan menyesuaikan dengan berbagai ukuran layar
-- **Animasi Smooth**: Transisi dan hover effects yang halus
-- **Color Scheme**: Menggunakan color palette yang konsisten dan profesional
-- **Typography**: Font yang lebih readable dan hierarki yang jelas
+## Fitur Utama
+- __Dashboard (`views/dashboard.php`)__
+  - Ringkasan jumlah dan total: Booking, Kas Masuk, Kas Keluar (mengambil data dari tabel: `jadwal_booking`, `penerimaan_kas`, `pengeluaran_kas`).
+  - Menampilkan nama admin dari tabel `users` (berdasarkan session login).
+  - Galeri foto dekorasi dari folder `assets/img/` (file berawalan `Dekor*.jpg/png`), maksimal 12 foto agar ringan.
+- __Kas Masuk (`views/kas_masuk.php`)__
+  - Input transaksi penerimaan, edit/hapus, dan tabel data.
+  - Handler backend di `functions/` (mis. `kas_masuk_tambah.php`, `kas_masuk_edit.php`, `kas_masuk_hapus.php`).
+- __Kas Keluar (`views/kas_keluar.php`)__
+  - Input transaksi pengeluaran, edit/hapus, dan tabel data.
+  - Handler backend di `functions/` (mis. `kas_keluar_tambah.php`, `kas_keluar_edit.php`, `kas_keluar_hapus.php`).
+- __Booking (`views/booking.php`)__
+  - Input jadwal booking, pilih paket, edit/hapus.
+  - Handler di `functions/booking_*.php`.
+- __Laporan Keuangan (`views/laporan.php`)__
+  - Tabel gabungan Kas Masuk & Kas Keluar bulan berjalan, total bulanan, dan tombol cetak PDF.
+  - __Cetak PDF__: `cetaklaporan.php` (mPDF, ada filter bulan/tahun; direktori `tmp` untuk mPDF diatur aman).
+- __Autentikasi__
+  - Login via `Login.php`, cek session di `cek.php`. Nama admin di dashboard diambil dari tabel `users` jika tersedia.
 
-### 2. **Organisasi Kode yang Lebih Baik**
-- **Struktur File Terorganisir**: Pemisahan logic dan presentation
-- **Clean Code**: Kode yang mudah dibaca dan di-maintain
-- **Security Improvements**: Prepared statements untuk mencegah SQL injection
-- **Error Handling**: Penanganan error yang lebih baik
+## Cara Menjalankan (XAMPP/LAMPP)
+1. __Siapkan Server__
+   - Jalankan Apache & MySQL.
+   - Salin folder proyek ke: `htdocs/(namafolderprojek)` (XAMPP) atau `/opt/lampp/htdocs/(namafolderprojek)` (LAMPP).
+2. __Konfigurasi Database__
+   - Buat database MySQL: `cashflow`.
+   - Import struktur tabel minimal: `penerimaan_kas`, `pengeluaran_kas`, `jadwal_booking`, `users` (untuk login/nama admin).
+3. __Konfigurasi Koneksi__
+   - File koneksi: `config/koneksi.php` (nama baru pengganti `database.php`). Pastikan `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME` sesuai.
+4. __Akses Aplikasi__
+   - Buka `http://localhost/(namafolderprojek)/index.php`.
+   - Login via `Login.php` (gunakan akun yang ada di tabel `users`).
 
-### 3. **Fitur-Fitur Utama**
-
-#### Dashboard
-- **Statistics Cards**: Menampilkan total kas masuk, keluar, saldo, dan booking
-- **Welcome Header**: Header yang menarik dengan animasi
-- **Gallery Section**: Galeri foto dekorasi dengan hover effects
-
-#### Kas Masuk
-- **Form Input**: Form yang clean dengan validation
-- **Data Table**: Tabel yang terorganisir dengan DataTables
-- **CRUD Operations**: Create, Read, Update, Delete dengan modal
-- **Export Feature**: Cetak laporan per bulan/tahun
-
-#### Kas Keluar
-- **Kategorisasi**: Dropdown kategori pengeluaran
-- **Management**: Edit dan hapus data dengan konfirmasi
-- **Reporting**: Laporan pengeluaran yang detail
-
-#### Jadwal Booking
-- **Event Management**: Manajemen jadwal booking event
-- **Package Selection**: Pilihan paket Silver, Gold, Platinum
-- **Status Tracking**: Status booking (Selesai, Hari Ini, Mendatang)
-
-#### Laporan Keuangan
-- **Summary Cards**: Ringkasan keuangan bulanan
-- **Combined Report**: Laporan gabungan kas masuk dan keluar
-- **Export Function**: Download laporan dalam format PDF
-
-### 4. **Teknologi yang Digunakan**
-- **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript
-- **Backend**: PHP 7.4+, MySQL
-- **Libraries**: 
-  - Simple DataTables untuk manajemen tabel
-  - Font Awesome untuk icons
-  - Bootstrap untuk responsive design
-
-### 5. **Fitur Keamanan**
-- **Prepared Statements**: Mencegah SQL injection
-- **Input Sanitization**: Pembersihan input data
-- **Session Management**: Pengelolaan sesi yang aman
-- **Error Handling**: Penanganan error yang tidak mengungkap informasi sensitif
-
-## Struktur File
-
+## Struktur Direktori Penting
 ```
 cashflow-dwi/
-├── index.php              # File utama dengan UI yang diperbaiki
-├── function.php            # Functions dengan security improvements
-├── cek.php                # Authentication check
-├── cetak_kasmasuk.php     # Print report kas masuk
-├── css/
-│   ├── styles.css         # CSS framework Bootstrap
-│   └── enhanced-styles.css # Custom CSS untuk UI enhancement
-├── Dekor*.jpg             # Gallery images
-└── README.md              # Dokumentasi ini
+├── index.php                 # Router/entry utama halaman
+├── dashboard.php             # Router konten, menyertakan file di folder views/
+├── Login.php                 # Halaman login
+├── Logout.php                # Keluar sesi
+├── cek.php                   # Helper session/login
+├── config/
+│   ├── koneksi.php           # Koneksi MySQL (pengganti database.php)
+│   └── database.php          # Shim yang mengarah ke koneksi.php (kompatibilitas lama)
+├── layout/
+│   ├── sidebar.php           # Sidebar navigasi (aktif berdasarkan tab)
+│   └── navbar.php            # Navbar (menu user & logout)
+├── views/
+│   ├── dashboard.php         # Ringkasan + galeri
+│   ├── kas_masuk.php         # UI kas masuk
+│   ├── kas_keluar.php        # UI kas keluar
+│   ├── booking.php           # UI booking
+│   └── laporan.php           # Tabel gabungan + ekspor PDF
+├── functions/
+│   ├── kas_masuk_tambah.php  # Handler tambah kas masuk
+│   ├── kas_masuk_edit.php    # Handler edit kas masuk
+│   ├── kas_masuk_hapus.php   # Handler hapus kas masuk
+│   ├── kas_keluar_tambah.php # Handler tambah kas keluar
+│   ├── kas_keluar_edit.php   # Handler edit kas keluar
+│   ├── kas_keluar_hapus.php  # Handler hapus kas keluar
+│   ├── booking_tambah.php    # Handler tambah booking
+│   ├── booking_edit.php      # Handler edit booking
+│   └── booking_hapus.php     # Handler hapus booking
+├── includes/
+│   └── utils.php             # Helper umum (sanitasi, format rupiah, dsb.)
+├── assets/
+│   └── img/                  # Gambar galeri (Dekor*.jpg/png)
+├── cetaklaporan.php          # Generator PDF (mPDF) laporan bulanan
+├── cetak_kasmasuk.php        # Cetak laporan kas masuk (opsional)
+├── cetak_kaskeluar.php       # Cetak laporan kas keluar (opsional)
+└── README.md                 # Dokumen ini
 ```
 
-## Cara Menggunakan
+## Alur Kerja Singkat (untuk Presentasi)
+- __Login__ → masuk sebagai admin.
+- __Dashboard__ → lihat ringkasan dan galeri (nama admin tampil dari DB `users`).
+- __Kas Masuk/Keluar__ → input transaksi, simpan, edit/hapus dari tabel.
+- __Booking__ → input jadwal, pilih paket, kelola data.
+- __Laporan__ → pilih bulan/tahun → lihat tabel gabungan → klik cetak PDF (`cetaklaporan.php`).
 
-### Setup Database
-1. Buat database MySQL dengan nama `cashflow`
-2. Buat tabel-tabel berikut:
+## Catatan Teknis Penting
+- __Normalisasi Redirect__: Semua handler `functions/*` mengarah ke `dashboard.php?tab=...` agar konsisten.
+- __mPDF__:
+  - Autoload: `vendor/autoload.php` (jalankan `composer require mpdf/mpdf` bila belum ada).
+  - Temp folder aman: otomatis membuat folder `tmp` lokal jika belum ada.
+- __Keamanan__: Sanitasi input, prepared statements, dan cek session (`cek.php`).
 
-```sql
--- Tabel penerimaan kas
-CREATE TABLE penerimaan_kas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    Tanggal_Input DATE NOT NULL,
-    Event_WLE VARCHAR(255) NOT NULL,
-    Keterangan TEXT NOT NULL,
-    Nominal INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+## Rencana Lanjutan (Opsional)
+- Filter periode di dashboard (mis. bulan berjalan).
+- Lightbox untuk galeri.
+- Ekspor Excel/CSV.
+- Multi-user & role (admin/staff).
 
--- Tabel pengeluaran kas
-CREATE TABLE pengeluaran_kas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    Tanggal_Input DATE NOT NULL,
-    Event_WLE VARCHAR(255),
-    Keterangan TEXT NOT NULL,
-    Nama_Akun VARCHAR(100) NOT NULL,
-    Nominal INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+—
 
--- Tabel jadwal booking
-CREATE TABLE jadwal_booking (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    Tanggal DATE NOT NULL,
-    Event VARCHAR(255) NOT NULL,
-    Paket VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Instalasi
-1. Clone atau download file ke folder web server (htdocs untuk XAMPP)
-2. Pastikan web server (Apache) dan MySQL sudah berjalan
-3. Akses melalui browser: `http://localhost/cashflow-dwi/index.php`
-
-### Penggunaan
-1. **Dashboard**: Melihat ringkasan keuangan dan galeri
-2. **Kas Masuk**: Mengelola penerimaan kas dari event
-3. **Kas Keluar**: Mengelola pengeluaran dengan kategori
-4. **Booking**: Mengelola jadwal booking event
-5. **Laporan**: Melihat dan mencetak laporan keuangan
-
-## Peningkatan yang Dapat Dilakukan
-
-### Jangka Pendek
-- [ ] Implementasi user authentication yang lebih robust
-- [ ] Backup otomatis database
-- [ ] Export ke Excel/CSV
-- [ ] Filter tanggal yang lebih fleksibel
-
-### Jangka Panjang
-- [ ] API untuk integrasi dengan sistem lain
-- [ ] Dashboard analytics dengan chart
-- [ ] Notification system
-- [ ] Multi-user dengan role management
-- [ ] Mobile app companion
-
-## Browser Support
-- Chrome 80+
-- Firefox 75+
-- Safari 13+
-- Edge 80+
-
-## Credits
-Dikembangkan untuk Dekorasi Graceful dengan fokus pada:
-- User Experience yang intuitif
-- Performance yang optimal
-- Maintainability yang baik
-- Security yang terjamin
-
----
-
-**Note**: Sistem ini telah dioptimalkan untuk kemudahan penggunaan dan tampilan yang modern sambil mempertahankan semua fungsionalitas inti yang diperlukan untuk manajemen keuangan bisnis dekorasi.
+Disusun untuk __Dwiyanti Halimah__. Jika butuh materi slide ringkas untuk seminar (alur, fitur, dan demo singkat), bisa saya siapkan berdasarkan poin-poin di atas.
