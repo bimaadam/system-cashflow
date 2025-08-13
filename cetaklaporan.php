@@ -1,24 +1,55 @@
 <?php
 require 'function.php';
 
+@include __DIR__ . '/vendor/autoload.php';
+if (!class_exists('Mpdf\\Mpdf')) {
+    die('mPDF belum terpasang. Silakan install dengan: composer require mpdf/mpdf');
+}
+
 use Mpdf\Mpdf;
 
-$mpdf = new Mpdf(['format' => 'A4']);
-$bulan_ini = date('Y-m');
-$bulan_format = date('F Y');
+$mpdfTmp = __DIR__ . '/tmp';
+if (!is_dir($mpdfTmp)) {
+    @mkdir($mpdfTmp, 0777, true);
+}
+if (!is_writable($mpdfTmp)) {
+    @chmod($mpdfTmp, 0777);
+}
 
-// Ambil data kas masuk
-$kas_masuk = mysqli_query($conn, "SELECT * FROM penerimaan_kas ORDER BY Tanggal_Input ASC");
+try {
+    $mpdf = new Mpdf([
+        'format' => 'A4',
+        'tempDir' => $mpdfTmp,
+    ]);
+} catch (\Throwable $e) {
+    http_response_code(500);
+    die('mPDF init error: ' . htmlspecialchars($e->getMessage()));
+}
+$bulan = isset($_GET['bulan']) && preg_match('/^\d{2}$/', $_GET['bulan']) ? $_GET['bulan'] : date('m');
+$tahun = isset($_GET['tahun']) && preg_match('/^\d{4}$/', $_GET['tahun']) ? $_GET['tahun'] : date('Y');
 
-// Ambil data kas keluar
-$kas_keluar = mysqli_query($conn, "SELECT * FROM pengeluaran_kas ORDER BY Tanggal_Input ASC");
+$start_month = sprintf('%04d-%02d-01 00:00:00', (int)$tahun, (int)$bulan);
+$next_month  = date('Y-m-01 00:00:00', strtotime("$start_month +1 month"));
 
-// Total per bulan
-$total_masuk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(Nominal) AS total FROM penerimaan_kas WHERE DATE_FORMAT(Tanggal_Input, '%Y-%m') = '$bulan_ini'"));
-$total_keluar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(Nominal) AS total FROM pengeluaran_kas WHERE DATE_FORMAT(Tanggal_Input, '%Y-%m') = '$bulan_ini'"));
+$nama_bulan_map = [
+    '01' => 'Januari','02' => 'Februari','03' => 'Maret','04' => 'April',
+    '05' => 'Mei','06' => 'Juni','07' => 'Juli','08' => 'Agustus',
+    '09' => 'September','10' => 'Oktober','11' => 'November','12' => 'Desember'
+];
+$bulan_format = ($nama_bulan_map[$bulan] ?? date('F', strtotime($start_month))) . ' ' . $tahun;
 
-ob_start(); // Start output buffering
-?>
+$kas_masuk = mysqli_query($conn, "SELECT * FROM penerimaan_kas 
+    WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
+    ORDER BY Tanggal_Input ASC");
+
+$kas_keluar = mysqli_query($conn, "SELECT * FROM pengeluaran_kas 
+    WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
+    ORDER BY Tanggal_Input ASC");
+
+$total_masuk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM penerimaan_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
+$total_keluar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM pengeluaran_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
+
+ob_start(); ?>
 
 <!-- HTML untuk PDF -->
 <html>
@@ -38,10 +69,16 @@ ob_start(); // Start output buffering
 <body>
 
 <div class="header">
-    <img src="logo_graceful.png" class="logo" alt="Logo Graceful"><br>
-    <div class="alamat">Graceful Decoration | Jl. Mawar No. 12, Bandung | Telp: (022) 12345678</div>
-    <h2>Laporan Keuangan</h2>
-    <div>Bulan: <?= $bulan_format ?></div>
+    <?php 
+        $logo_file = __DIR__ . '/logo_graceful.png';
+        $logo_src = file_exists($logo_file) ? ('file:        if ($logo_src) { echo '<img src="' . $logo_src . '" class="logo" alt="Logo Graceful"><br>'; }
+    ?>
+        <h2>Laporan Keuangan</h2>
+    <div class="alamat"><p style="font-style: italic; margin: 5px 0;">
+    Kampung <u>Tanjungjaya</u>, Desa Dawagung, <u>Kecamatan</u> Rajapolah, <u>Kabupaten Tasikmalaya</u>, 46155<br>
+    No HP 087833379235 <u>Email</u>: gracefuldecoration@gmail.com
+  </p></div>
+    <div>Bulan: <?= htmlspecialchars($bulan_format) ?></div>
 </div>
 
 <!-- Kas Masuk -->
@@ -80,9 +117,7 @@ ob_start(); // Start output buffering
         </tr>
     </thead>
     <tbody>
-        <?php
-        mysqli_data_seek($kas_keluar, 0);
-        while ($row = mysqli_fetch_assoc($kas_keluar)) { ?>
+        <?php while ($row = mysqli_fetch_assoc($kas_keluar)) { ?>
             <tr>
                 <td><?= $row['Tanggal_Input'] ?></td>
                 <td><?= $row['Event_WLE'] ?></td>
@@ -111,5 +146,10 @@ ob_start(); // Start output buffering
 
 <?php
 $html = ob_get_clean();
-$mpdf->WriteHTML($html);
-$mpdf->Output('Laporan_Keuangan_' . date('Y_m') . '.pdf', 'I');
+try {
+    $mpdf->WriteHTML($html);
+    $mpdf->Output('Laporan_Keuangan_' . date('Y_m') . '.pdf', 'I');
+} catch (\Throwable $e) {
+    http_response_code(500);
+    die('mPDF rendering error: ' . htmlspecialchars($e->getMessage()));
+}

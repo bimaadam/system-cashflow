@@ -1,28 +1,38 @@
 <?php
 require 'function.php';
+require 'cek.php';
 
-
-//Cek login
-if(isset($_POST['login'])){
-    $email =$_POST['email'];
-    $password =$_POST['password'];
-//Cocokin dengan database
-    $cekdatabase = mysqli_query($conn,"SELECT * FROM login where email='$email'and password='$password'");
-    //hitung jumlah data
-    $hitung= mysqli_num_rows($cekdatabase);
-
-    if ($hitung>0){
-        $_SESSION['log']="true";
-        header('location: PERCOBAAN.php');     
-    } else {
-        header('location:Login.php');
-    }
+// If already logged in, redirect to main dashboard
+if (is_logged_in()) {
+    header('Location: index.php');
+    exit();
 }
 
-if (!isset($_SESSION['log'])){
+// Handle login submission
+if (isset($_POST['login'])) {
+    $identity = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-}else {
-    header('location:PERCOBAAN.php');
+    // Allow login with email or username; verify hashed password
+    $stmt = $conn->prepare("SELECT id, email, username, password, role, is_active FROM users WHERE email = ? OR username = ? LIMIT 1");
+    $stmt->bind_param('ss', $identity, $identity);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result && $result->num_rows === 1) {
+        $row = $result->fetch_assoc();
+        if ((int)$row['is_active'] === 1 && password_verify($password, $row['password'])) {
+            $_SESSION['user_logged_in'] = true;
+            $_SESSION['user_id'] = (int)$row['id'];
+            $_SESSION['username'] = $row['username'] ?: $row['email'];
+            $_SESSION['user_role'] = $row['role'] ?: 'user';
+
+            header('Location: index.php');
+            exit();
+        }
+    }
+
+    $error = 'Email/Username atau password salah, atau akun nonaktif';
 }
 ?>
 <!DOCTYPE html>
@@ -36,7 +46,7 @@ if (!isset($_SESSION['log'])){
     <link href="css/styles.css" rel="stylesheet" />
     <style>
         body {
-            background-image: url('/PROJECT/Dekor7.jpg'); /* Ganti path dengan lokasi gambar Anda */
+            background-image: url('assets/img/Dekor7.jpg'); /* Ganti path dengan lokasi gambar Anda */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -70,6 +80,11 @@ if (!isset($_SESSION['log'])){
     <div class="d-flex justify-content-center align-items-center" style="height:100vh;">
         <div class="col-md-4 login-card">
             <h3 class="text-center login-title mb-4">Graceful Dekorasi</h3>
+            <?php if (!empty($error)): ?>
+                <div class="alert alert-danger py-2 mb-3" role="alert">
+                    <?= htmlspecialchars($error) ?>
+                </div>
+            <?php endif; ?>
     <form method="post" autocomplete="off">
             <div class="form-group mb-3">
             <label class="small mb-1" for="inputEmailAddress">Email</label>
@@ -83,6 +98,9 @@ if (!isset($_SESSION['log'])){
         <button class="btn btn-primary w-100" name="login">Login</button>
         </div>
     </form>
+    <div class="text-center mt-3">
+                    <small>Belum punya akun? <a href="register.html">Register</a></small>
+                </div>
 
         </div>
     </div>

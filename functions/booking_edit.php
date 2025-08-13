@@ -1,21 +1,20 @@
 <?php
 require_once __DIR__ . '/../function.php';
+require_once __DIR__ . '/../cek.php';
+require_login();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $tanggal = $_POST['Tanggal_Input'] ?? '';
-    $event = $_POST['Event_WLE'] ?? '';
-    $keterangan = $_POST['Keterangan'] ?? '';
-    $nama_akun = $_POST['Nama_Akun'] ?? '';
-    $nominal = $_POST['Nominal'] ?? '';
+    $id = (int)($_POST['id'] ?? 0);
+    $tanggal = $_POST['Tanggal'] ?? '';
+    $event = $_POST['Event'] ?? '';
+    $paket = $_POST['Paket'] ?? '';
 
-    if (!empty($tanggal) && !empty($keterangan) && !empty($nama_akun) && is_numeric($nominal) && (int)$nominal > 0) {
+    if ($id > 0 && !empty($tanggal) && !empty($event) && !empty($paket)) {
         $tanggal = mysqli_real_escape_string($conn, $tanggal);
         $event = mysqli_real_escape_string($conn, $event);
-        $keterangan = mysqli_real_escape_string($conn, $keterangan);
-        $nama_akun = mysqli_real_escape_string($conn, $nama_akun);
-        $nominal = (int)$nominal;
+        $paket = mysqli_real_escape_string($conn, $paket);
 
-        $query = mysqli_query($conn, "INSERT INTO pengeluaran_kas (Tanggal_Input, Event_WLE, Keterangan, Nama_Akun, Nominal) VALUES ('$tanggal', '$event', '$keterangan', '$nama_akun', $nominal)");
+        $query = mysqli_query($conn, "UPDATE jadwal_booking SET Tanggal='$tanggal', Event='$event', Paket='$paket' WHERE id=$id");
         if ($query) {
             $redirect = $_POST['redirect'] ?? '';
             if (!empty($redirect)) {
@@ -24,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 header("Location: $redirect");
             } else {
-                header("Location: ../dashboard.php?tab=kas_keluar&success=1");
+                header("Location: ../dashboard.php?tab=booking&updated=1");
             }
             exit;
         }
@@ -37,11 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header("Location: $redirect");
     } else {
-        header("Location: ../dashboard.php?tab=kas_keluar&error=1");
+        header("Location: ../dashboard.php?tab=booking&error=1");
     }
     exit;
 }
 
-header('Location: ../dashboard.php?tab=kas_keluar');
-    exit;
-?>
+header('Location: ../dashboard.php?tab=booking');
+exit;
+
+

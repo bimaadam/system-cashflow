@@ -3,11 +3,10 @@ require_once __DIR__ . '/../function.php';
 require_once __DIR__ . '/../cek.php';
 require_login();
 
-// Accept both GET and POST deletion
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     if ($id > 0) {
-        mysqli_query($conn, "DELETE FROM penerimaan_kas WHERE id = $id");
+        mysqli_query($conn, "DELETE FROM pengeluaran_kas WHERE id = $id");
     }
     $redirect = $_GET['redirect'] ?? '';
     if (!empty($redirect)) {
@@ -16,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
         }
         header("Location: $redirect");
     } else {
-        header("Location: ../dashboard.php?tab=kas_masuk&deleted=1");
+        header("Location: ../dashboard.php?tab=kas_keluar&deleted=1");
     }
     exit;
 }
@@ -24,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     $id = (int)$_POST['id'];
     if ($id > 0) {
-        mysqli_query($conn, "DELETE FROM penerimaan_kas WHERE id = $id");
+        mysqli_query($conn, "DELETE FROM pengeluaran_kas WHERE id = $id");
         echo json_encode(['success' => true]);
         exit;
     }
@@ -32,6 +31,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     exit;
 }
 
-header('Location: ../dashboard.php?tab=kas_masuk');
+header('Location: ../dashboard.php?tab=kas_keluar');
 exit;
-?>
