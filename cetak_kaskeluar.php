@@ -5,13 +5,28 @@ require 'function.php';
 $bulan = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
 $tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
 
+$nama_bulan_map = [
+    '01' => 'Januari',
+    '02' => 'Februari',
+    '03' => 'Maret',
+    '04' => 'April',
+    '05' => 'Mei',
+    '06' => 'Juni',
+    '07' => 'Juli',
+    '08' => 'Agustus',
+    '09' => 'September',
+    '10' => 'Oktober',
+    '11' => 'November',
+    '12' => 'Desember'
+];
+$nama_bulan = $nama_bulan_map[$bulan] ?? $bulan;
+
 // Query data per bulan dan tahun
 $query = mysqli_query($conn, "SELECT * FROM pengeluaran_kas 
     WHERE MONTH(Tanggal_Input) = '$bulan' AND YEAR(Tanggal_Input) = '$tahun' 
     ORDER BY Tanggal_Input ASC");
 
 $total = 0;
-$nama_bulan = date("F", mktime(0, 0, 0, $bulan, 10));
 ?>
 
 <!DOCTYPE html>

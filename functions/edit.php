@@ -1,18 +1,17 @@
 <?php
-// Functions for editing/updating records
-// This file contains all functions related to updating existing data
+
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/utils.php';
 
 /**
- * Update kas masuk (income) record
- * @param int $id Record ID
- * @param string $tanggal Date of transaction
- * @param string $event Event description
- * @param string $keterangan Transaction details
- * @param int $nominal Amount
- * @return array Result with success status and message
+ * 
+ * @param int 
+ * @param string 
+ * @param string 
+ * @param string 
+ * @param int 
+ * @return array 
  */
 function edit_kas_masuk($id, $tanggal, $event, $keterangan, $nominal) {
     $conn = get_db_connection();

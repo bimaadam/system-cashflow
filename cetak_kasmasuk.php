@@ -5,51 +5,35 @@ require 'function.php';
 $bulan = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
 $tahun = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
 
+$nama_bulan_map = [
+    '01' => 'Januari',
+    '02' => 'Februari',
+    '03' => 'Maret',
+    '04' => 'April',
+    '05' => 'Mei',
+    '06' => 'Juni',
+    '07' => 'Juli',
+    '08' => 'Agustus',
+    '09' => 'September',
+    '10' => 'Oktober',
+    '11' => 'November',
+    '12' => 'Desember'
+];
+$nama_bulan = $nama_bulan_map[$bulan] ?? $bulan;
+
 // Query data per bulan dan tahun
 $query = mysqli_query($conn, "SELECT * FROM penerimaan_kas 
     WHERE MONTH(Tanggal_Input) = '$bulan' AND YEAR(Tanggal_Input) = '$tahun' 
     ORDER BY Tanggal_Input ASC");
 
 $total = 0;
-$nama_bulan = date("F", mktime(0, 0, 0, $bulan, 10));
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
     <title>Laporan Kas Masuk Bulan <?= $nama_bulan . " " . $tahun ?></title>
-    <style>
-        @media print {
-  .no-print {
-    display: none !important;
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    position: relative;
-  }
-
-  .ttd {
-    position: absolute;
-    bottom: 60px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 30px;
-  }
-}
-
-        body { font-family: Arial; margin: 30px; }
-        .logo { width: 150px; }
-        .center { text-align: center; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: center; }
-        .ttd { margin-top: 80px; display: flex; justify-content: space-between; }
-        .ttd div { text-align: center; width: 40%; }
-    </style>
+    <link rel="stylesheet" type="text/css" href="cetak_kasmasuk.css">
 </head>
 <body>
 

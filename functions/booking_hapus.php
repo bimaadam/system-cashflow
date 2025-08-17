@@ -8,13 +8,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     if ($id > 0) {
         mysqli_query($conn, "DELETE FROM jadwal_booking WHERE id = $id");
     }
+    $base_url = dirname($_SERVER['SCRIPT_NAME'], 2);
+
     $redirect = $_GET['redirect'] ?? '';
     if (!empty($redirect)) {
-        header("Location: $redirect");
+        header("Location: $base_url/$redirect");
     } else {
-        header("Location: ../dashboard.php?tab=booking&deleted=1");
-    }
+        header("Location: $base_url/dashboard.php?tab=booking&deleted=1");
+    } 
     exit;
+
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
@@ -28,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     exit;
 }
 
-header('Location: ../dashboard.php?tab=booking');
+header('Location: ../../dashboard.php?tab=booking');
 exit;
 
 
