@@ -74,6 +74,39 @@ if (isset($_POST['login'])) {
         .btn-primary:hover {
             background-color: #5a6268;
         }
+
+
+.login-card {
+    position: relative;
+    z-index: 1;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.3);
+    overflow: hidden;
+}
+
+/* border neon animasi */
+.login-card::before {
+    content: "";
+    position: absolute;
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border-radius: 18px;
+    background: linear-gradient(270deg, 
+        #ffffff, #cccccc, #666666, #000000, #666666, #cccccc, #ffffff);
+    background-size: 400% 400%;
+    animation: borderGlow 8s linear infinite;
+    z-index: -1;
+    filter: blur(8px);
+}
+
+@keyframes borderGlow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
     </style>
 </head>
 <body>
@@ -98,13 +131,39 @@ if (isset($_POST['login'])) {
         <button class="btn btn-primary w-100" name="login">Login</button>
         </div>
     </form>
-    <div class="text-center mt-3">
-                    <small>Belum punya akun? <a href="register.html">Register</a></small>
-                </div>
-
-        </div>
+  
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    gsap.from(".login-card", {
+        duration: 1,
+        y: 80,
+        opacity: 0,
+        ease: "power4.out"
+    });
+
+    gsap.from(".login-card input", {
+        duration: 0.8,
+        opacity: 0,
+        y: 30,
+        stagger: 0.2,
+        ease: "power2.out",
+        delay: 0.5
+    });
+
+    gsap.from(".login-card button", {
+        duration: 0.8,
+        scale: 0.8,
+        opacity: 0,
+        ease: "back.out(1.7)",
+        delay: 1
+    });
+});
+</script>
+
 </body>
 </html>

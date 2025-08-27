@@ -6,6 +6,10 @@ error_reporting(E_ALL);
 
 require 'function.php';
 require 'cek.php';
+require 'auth_check.php';
+
+// Enforce role-based access
+enforce_role_access();
 
 // Enforce login for this dashboard page
 require_login();

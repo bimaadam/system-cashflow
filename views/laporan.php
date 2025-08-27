@@ -94,6 +94,22 @@
             </select>
             <label for="tahun" class="ms-2 me-1">Tahun:</label>
             <input type="number" name="tahun" id="tahun" class="form-control form-control-sm" min="2020" max="2100" value="<?= date('Y') ?>" required>
+<label for="event" class="ms-2 me-1">Event:</label>
+<select name="event" id="event" class="form-select form-select-sm">
+<option value="">SEMUA EVENT</option>
+<?php
+$eventList = mysqli_query($conn, "SELECT DISTINCT Event_WLE FROM (
+        SELECT Event_WLE FROM penerimaan_kas
+        UNION ALL
+        SELECT Event_WLE FROM pengeluaran_kas
+    ) AS all_events ORDER BY Event_WLE ASC");
+
+    while ($e = mysqli_fetch_assoc($eventList)) {
+        echo "<option value='{$e['Event_WLE']}'>{$e['Event_WLE']}</option>";
+    }
+    ?>
+</select>
+
             <button type="submit" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-download me-1"></i> Unduh PDF
             </button>

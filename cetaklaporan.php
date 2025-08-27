@@ -42,6 +42,9 @@ try {
 $bulan = isset($_GET['bulan']) && preg_match('/^\d{2}$/', $_GET['bulan']) ? $_GET['bulan'] : date('m');
 $tahun = isset($_GET['tahun']) && preg_match('/^\d{4}$/', $_GET['tahun']) ? $_GET['tahun'] : date('Y');
 
+// ✅ Tambahan untuk event filter
+$eventFilter = isset($_GET['event']) ? trim($_GET['event']) : '';
+
 $start_month = sprintf('%04d-%02d-01 00:00:00', (int)$tahun, (int)$bulan);
 $next_month  = date('Y-m-01 00:00:00', strtotime("$start_month +1 month"));
 
@@ -50,41 +53,47 @@ $nama_bulan_map = [
     '05' => 'Mei','06' => 'Juni','07' => 'Juli','08' => 'Agustus',
     '09' => 'September','10' => 'Oktober','11' => 'November','12' => 'Desember'
 ];
-$eventFilter = isset($_GET['event']) ? trim($_GET['event']) : '';
-$bulan_format = ($nama_bulan_map[$bulan] ?? date('F', strtotime($start_month))) . ' ' . $tahun;
-
-// Build queries with optional event filter using prepared statements
 if ($eventFilter !== '') {
+    // FILTER BERDASARKAN EVENT SAJA (tidak pakai bulan/tahun)
     $like = "%" . $eventFilter . "%";
-    // Kas Masuk list
-    $stmtMasuk = mysqli_prepare($conn, "SELECT * FROM penerimaan_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ? ORDER BY Tanggal_Input ASC");
-    mysqli_stmt_bind_param($stmtMasuk, 'sss', $start_month, $next_month, $like);
+
+    // Kas Masuk
+    $stmtMasuk = mysqli_prepare($conn, "SELECT * FROM penerimaan_kas WHERE Event_WLE LIKE ? ORDER BY Tanggal_Input ASC");
+    mysqli_stmt_bind_param($stmtMasuk, 's', $like);
     mysqli_stmt_execute($stmtMasuk);
     $kas_masuk = mysqli_stmt_get_result($stmtMasuk);
-    // Kas Keluar list
-    $stmtKeluar = mysqli_prepare($conn, "SELECT * FROM pengeluaran_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ? ORDER BY Tanggal_Input ASC");
-    mysqli_stmt_bind_param($stmtKeluar, 'sss', $start_month, $next_month, $like);
+
+    // Kas Keluar
+    $stmtKeluar = mysqli_prepare($conn, "SELECT * FROM pengeluaran_kas WHERE Event_WLE LIKE ? ORDER BY Tanggal_Input ASC");
+    mysqli_stmt_bind_param($stmtKeluar, 's', $like);
     mysqli_stmt_execute($stmtKeluar);
     $kas_keluar = mysqli_stmt_get_result($stmtKeluar);
-    // Totals
-    $stmtTotMasuk = mysqli_prepare($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM penerimaan_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ?");
-    mysqli_stmt_bind_param($stmtTotMasuk, 'sss', $start_month, $next_month, $like);
+
+    // Total
+    $stmtTotMasuk = mysqli_prepare($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM penerimaan_kas WHERE Event_WLE LIKE ?");
+    mysqli_stmt_bind_param($stmtTotMasuk, 's', $like);
     mysqli_stmt_execute($stmtTotMasuk);
     $total_masuk = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtTotMasuk));
-    $stmtTotKeluar = mysqli_prepare($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM pengeluaran_kas WHERE Tanggal_Input >= ? AND Tanggal_Input < ? AND Event_WLE LIKE ?");
-    mysqli_stmt_bind_param($stmtTotKeluar, 'sss', $start_month, $next_month, $like);
+
+    $stmtTotKeluar = mysqli_prepare($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM pengeluaran_kas WHERE Event_WLE LIKE ?");
+    mysqli_stmt_bind_param($stmtTotKeluar, 's', $like);
     mysqli_stmt_execute($stmtTotKeluar);
     $total_keluar = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtTotKeluar));
+
 } else {
+    // FILTER BERDASARKAN BULAN & TAHUN (kode kamu yang lama tetap dipakai)
     $kas_masuk = mysqli_query($conn, "SELECT * FROM penerimaan_kas 
         WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
         ORDER BY Tanggal_Input ASC");
     $kas_keluar = mysqli_query($conn, "SELECT * FROM pengeluaran_kas 
         WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'
         ORDER BY Tanggal_Input ASC");
-    $total_masuk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM penerimaan_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
-    $total_keluar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total FROM pengeluaran_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
+    $total_masuk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total 
+        FROM penerimaan_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
+    $total_keluar = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(Nominal),0) AS total 
+        FROM pengeluaran_kas WHERE Tanggal_Input >= '$start_month' AND Tanggal_Input < '$next_month'"));
 }
+
 
 ob_start(); ?>
 
@@ -112,12 +121,14 @@ ob_start(); ?>
     No HP 087833379235 <u>Email</u>: gracefuldecoration@gmail.com
   </p>
   <hr style="border: 2px solid black; margin: 10px 0 0 0;">
-  <div style="font-weight: bold; font-size: 18px; margin-top: -12px;">
-    <h3><u>LAPORAN KEUANGAN BULAN <?= strtoupper($bulan_format) ?></u></h3>
-  </div>
   <?php if ($eventFilter !== ''): ?>
-    <div style="margin-top:4px; font-size: 11pt;">Filter Event: <strong><?= htmlspecialchars($eventFilter) ?></strong></div>
-  <?php endif; ?>
+  <h3><u>LAPORAN KEUANGAN EVENT <?= strtoupper($eventFilter) ?></u></h3>
+<?php else: ?>
+  <h3><u>LAPORAN KEUANGAN BULAN <?= strtoupper($nama_bulan_map[$bulan]) . " " . $tahun ?></u></h3>
+<?php endif; ?>
+
+
+
 </div>
 
 <!-- Kas Masuk -->

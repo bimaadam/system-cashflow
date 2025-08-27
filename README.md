@@ -27,6 +27,33 @@ Dokumen ini merangkum gambaran proyek, cara menjalankan, struktur file, dan alur
 - __Autentikasi__
   - Login via `Login.php`, cek session di `cek.php`. Nama admin di dashboard diambil dari tabel `users` jika tersedia.
 
+## Pembaruan Penting (Agustus 2025)
+Beberapa perubahan signifikan telah diimplementasikan untuk meningkatkan fungsionalitas dan manajemen pengguna:
+
+-   **Sistem Hak Akses Berbasis Peran (Role-Based Access Control):**
+    *   **Admin:** Memiliki akses penuh ke semua fitur dan halaman.
+    *   **Owner:** Memiliki akses terbatas hanya pada **Dashboard**, **Jadwal Booking**, dan **Laporan Keuangan**.
+
+-   **Alur Kerja Terintegrasi - Booking Otomatis ke Kas Masuk:**
+    *   Setiap kali Anda melakukan input booking baru, sistem akan secara otomatis membuat entri yang sesuai di bagian **Kas Masuk** dengan nominal berdasarkan paket yang dipilih.
+
+-   **Peningkatan Halaman Kas Masuk:**
+    *   Pada halaman **Kas Masuk**, Anda sekarang dapat memilih event dari daftar booking yang sudah ada. Ketika event dipilih, kolom keterangan dan nominal akan terisi secara otomatis berdasarkan data booking dan harga paket yang telah ditentukan.
+
+-   **Akun Pengguna Owner Baru:**
+    *   Telah dibuat akun khusus untuk peran Owner:
+        *   **Email/Username:** `owner@graceful.com`
+        *   **Password:** `owner123`
+        *   **Nama Lengkap:** Owner Graceful
+
+-   **Perubahan Konfigurasi Database (Penting untuk Pengguna Windows):**
+    *   Untuk meningkatkan kompatibilitas koneksi database, terutama pada lingkungan Windows, konfigurasi host database di file `function.php` telah diubah dari `localhost` menjadi `127.0.0.1`.
+    *   **Lokasi File:** `/opt/lampp/htdocs/cashflow-dwi/function.php`
+    *   **Baris yang Diubah:** `$db_host = "localhost";` menjadi `$db_host = "127.0.0.1";`
+
+-   **Pembaruan Skema Database:**
+    *   Kolom `role` pada tabel `users` telah diperbarui untuk menyertakan nilai `'owner'` sebagai opsi yang valid. Ini memastikan sistem dapat mengenali dan mengelola peran Owner dengan benar.
+
 ## Cara Menjalankan (XAMPP/LAMPP)
 1. __Siapkan Server__
    - Jalankan Apache & MySQL.

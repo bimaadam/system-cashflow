@@ -1,5 +1,48 @@
-<?php
+<style>
+/* ==== Card Hover Glow ==== */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
 
+/* ==== Icon Floating Animation ==== */
+.card .display-6 i {
+    animation: floatIcon 3s ease-in-out infinite;
+}
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+/* ==== Fade-in Section ==== */
+section, .row.g-3, .card {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.8s ease forwards;
+}
+section { animation-delay: 0.2s; }
+.row.g-3 { animation-delay: 0.4s; }
+.card { animation-delay: 0.6s; }
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==== Gallery Image Hover ==== */
+.card img {
+    transition: transform 0.5s ease;
+}
+.card img:hover {
+    transform: scale(1.1) rotate(1deg);
+}
+</style>
+<?php
 $summary = [
     'booking_count' => null,
     'kas_masuk_count' => null,
@@ -37,7 +80,7 @@ $adminName = 'Admin';
 if (!empty($_SESSION['user_id']) && isset($conn) && $conn) {
     try {
         $uid = (int)$_SESSION['user_id'];
-        $stmt = $conn->prepare("SELECT COALESCE(NULLIF(username,''), email) AS display_name FROM users WHERE id = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT COALESCE(NULLIF(full_name,''), full_name) AS display_name FROM users WHERE id = ? LIMIT 1");
         if ($stmt) {
             $stmt->bind_param('i', $uid);
             $stmt->execute();
@@ -137,7 +180,6 @@ if (function_exists('glob')) {
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body py-3 d-flex align-items-center">
-        <div class="me-3 text-secondary display-6"><i class="fas fa-user-circle"></i></div>
         <div>
             <div class="h5 mb-1">Selamat datang, <strong><?= htmlspecialchars($adminName) ?></strong></div>
             <div class="text-muted small">Ringkasan aktivitas dan transaksi terbaru ditampilkan di atas.</div>

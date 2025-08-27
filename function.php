@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 date_default_timezone_set('Asia/Jakarta');
 
 // Database configuration
-$db_host = "localhost";
+$db_host = "127.0.0.1";
 $db_user = "root";
 $db_pass = "";
 $db_name = "cashflow";
@@ -71,6 +71,7 @@ function add_kas_masuk($tanggal, $event, $keterangan, $nominal) {
     
     $query = "INSERT INTO penerimaan_kas (Tanggal_Input, Event_WLE, Keterangan, Nominal) 
               VALUES (?, ?, ?, ?)";
+
     
     $stmt = $conn->prepare($query);
     $stmt->bind_param("sssi", $tanggal, $event, $keterangan, $nominal);

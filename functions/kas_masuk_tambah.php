@@ -23,9 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (strpos($redirect, 'http://') !== 0 && strpos($redirect, 'https://') !== 0 && strpos($redirect, '/') !== 0) {
                     $redirect = '../' . ltrim($redirect, '/');
                 }
-                header("Location: $redirect");
+                header("Location: $redirect&status=success");
             } else {
-                header("Location: ../dashboard.php?tab=kas_masuk&success=1");
+                header("Location: ../dashboard.php?tab=kas_masuk&status=success");
             }
             exit;
         }
@@ -38,11 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header("Location: $redirect");
     } else {
-        header("Location: ../dashboard.php?tab=kas_masuk&error=1");
+        header("Location: ../dashboard.php?tab=kas_masuk&error");
     }
     exit;
 }
 
-header('Location: ../dashboard.php?tab=kas_masuk');
+header('Location: ../dashboard.php?tab=kas_masuk&status=error');
 exit;
 ?>

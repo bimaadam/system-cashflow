@@ -4,6 +4,78 @@
 <section id="dashboard3" class="mb-5">
     <h4 class="mb-3">Kas Keluar</h4>
 
+   <!-- ALERT (Pesan Sukses / Gagal) -->
+<?php if (isset($_GET['status'])): ?>
+    <?php if ($_GET['status'] == 'success'): ?>
+        <div class="heart-alert success" id="heartAlert">
+            <span>💖 SIPP MIN, DATANYA MASUK 😘 💖</span>
+            <button class="close-btn" onclick="closeHeart()">×</button>
+        </div>
+    <?php elseif ($_GET['status'] == 'error'): ?>
+        <div class="heart-alert error" id="heartAlert">
+            <span>💔 Data Gagal Disimpan! Silakan coba lagi 💔</span>
+            <button class="close-btn" onclick="closeHeart()">×</button>
+        </div>
+    <?php endif; ?>
+<?php endif; ?>
+
+<style>
+.heart-alert {
+    position: relative;
+    width: 250px;
+    height: 220px;
+    margin: 20px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    font-weight: bold;
+    color: white;
+    animation: popIn 0.6s ease forwards;
+    font-size: 14px;
+    line-height: 1.4em;
+
+    clip-path: path("M125 220 L10 100 A60 60 0 0 1 125 40 A60 60 0 0 1 240 100 Z");
+    opacity: 0;
+}
+
+/* Warna */
+.heart-alert.success {
+    background: linear-gradient(135deg, #ff69b4, #ff1493);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.7);
+}
+.heart-alert.error {
+    background: linear-gradient(135deg, #ff4e50, #8b0000);
+    box-shadow: 0 0 20px rgba(139, 0, 0, 0.7);
+}
+
+/* Tombol close */
+.heart-alert .close-btn {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+/* Animasi masuk & keluar */
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.8); }
+}
+.fade-out {
+    animation: fadeOut 0.1s forwards;
+}
+</style>
+
     <!-- FILTER EVENT -->
     <div class="card mb-3">
         <div class="card-body">
@@ -50,6 +122,7 @@
                     <option>Peralatan</option>
                     <option>Konsumsi</option>
                     <option>Modal</option>
+                    <option>Gaji</option>
                     <option>Dll</option>
                 </select>
             </div>
@@ -200,3 +273,19 @@
         <button type="submit" class="btn btn-primary">Cetak Laporan Kas Keluar</button>
     </form>
 </section>
+<script>
+function closeHeart() {
+    const alertBox = document.getElementById("heartAlert");
+    if (alertBox) {
+        alertBox.classList.add("fade-out");
+        setTimeout(() => alertBox.remove(), 600); // hapus setelah animasi selesai
+    }
+}
+
+// Otomatis close setelah 2 detik
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        closeHeart();
+    }, 2000);
+});
+</script>
