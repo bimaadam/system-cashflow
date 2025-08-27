@@ -107,7 +107,15 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Nama Event</label>
-                <input type="text" name="Event_WLE" class="form-control" placeholder="Nama Event" required>
+                <select name="Event_WLE" id="event-select-keluar" class="form-control">
+                    <option value="">-- Pilih Event (Opsional) --</option>
+                    <?php
+                    $booking_query = mysqli_query($conn, "SELECT Tanggal, Event FROM jadwal_booking ORDER BY Tanggal DESC");
+                    while ($booking = mysqli_fetch_assoc($booking_query)) {
+                        echo "<option value='{$booking['Event']}' data-tanggal='{$booking['Tanggal']}'>{$booking['Event']}</option>";
+                    }
+                    ?>
+                </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Keterangan</label>
@@ -273,6 +281,16 @@
         <button type="submit" class="btn btn-primary">Cetak Laporan Kas Keluar</button>
     </form>
 </section>
+<script>
+    document.getElementById('event-select-keluar').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const tanggal = selectedOption.getAttribute('data-tanggal');
+
+        if (tanggal) {
+            document.querySelector('input[name="Tanggal_Input"]').value = tanggal;
+        }
+    });
+</script>
 <script>
 function closeHeart() {
     const alertBox = document.getElementById("heartAlert");

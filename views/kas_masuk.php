@@ -113,9 +113,9 @@
                 <select name="Event_WLE" id="event-select" class="form-control" required>
                     <option value="">-- Pilih Event --</option>
                     <?php
-                    $booking_query = mysqli_query($conn, "SELECT * FROM jadwal_booking ORDER BY Tanggal DESC");
+                    $booking_query = mysqli_query($conn, "SELECT Tanggal, Event, Paket FROM jadwal_booking ORDER BY Tanggal DESC");
                     while ($booking = mysqli_fetch_assoc($booking_query)) {
-                        echo "<option value='{$booking['Event']}' data-paket='{$booking['Paket']}'>{$booking['Event']}</option>";
+                        echo "<option value='{$booking['Event']}' data-paket='{$booking['Paket']}' data-tanggal='{$booking['Tanggal']}'>{$booking['Event']}</option>";
                     }
                     ?>
                 </select>
@@ -278,7 +278,9 @@
         const eventName = this.value;
         const paket = selectedOption.getAttribute('data-paket');
         const harga = paket_prices[paket] || 0;
+        const tanggal = selectedOption.getAttribute('data-tanggal');
 
+        document.querySelector('input[name="Tanggal_Input"]').value = tanggal;
         document.querySelector('input[name="Keterangan"]').value = "Booking - " + eventName + " (" + paket + ")";
         document.querySelector('input[name="Nominal"]').value = harga;
     });
