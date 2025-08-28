@@ -87,6 +87,14 @@
                     <label class="form-label">Cari Event</label>
                     <input type="text" name="event" value="<?= isset($_GET['event']) ? htmlspecialchars($_GET['event']) : '' ?>" class="form-control" placeholder="Cari..." />
                 </div>
+                <div class="col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label">Dari Tanggal</label>
+                    <input type="date" name="start" value="<?= isset($_GET['start']) ? htmlspecialchars($_GET['start']) : '' ?>" class="form-control" />
+                </div>
+                <div class="col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label">Sampai</label>
+                    <input type="date" name="end" value="<?= isset($_GET['end']) ? htmlspecialchars($_GET['end']) : '' ?>" class="form-control" />
+                </div>
                 <div class="col-sm-6 col-md-3 col-lg-2 d-grid">
                     <label class="form-label">&nbsp;</label>
                     <button type="submit" class="btn btn-outline-primary"><i class="fas fa-search me-1"></i> Filter</button>
@@ -113,9 +121,22 @@
                 <select name="Event_WLE" id="event-select" class="form-control" required>
                     <option value="">-- Pilih Event --</option>
                     <?php
-                    $booking_query = mysqli_query($conn, "SELECT Tanggal, Event, Paket FROM jadwal_booking ORDER BY Tanggal DESC");
+                    $booking_query = mysqli_query($conn, "
+                        SELECT b.id, b.Tanggal, b.Event, b.Paket,
+                               COALESCE(b.total_tagihan, 0) AS total_tagihan,
+                               COALESCE((SELECT SUM(pk.Nominal) FROM penerimaan_kas pk 
+                                         WHERE pk.booking_id = b.id OR (pk.booking_id IS NULL AND pk.Event_WLE = b.Event)), 0) AS total_bayar
+                        FROM jadwal_booking b
+                        ORDER BY b.Tanggal DESC
+                    ");
                     while ($booking = mysqli_fetch_assoc($booking_query)) {
-                        echo "<option value='{$booking['Event']}' data-paket='{$booking['Paket']}' data-tanggal='{$booking['Tanggal']}'>{$booking['Event']}</option>";
+                        $eventVal = htmlspecialchars($booking['Event']);
+                        $paketVal = htmlspecialchars($booking['Paket']);
+                        $tglVal = htmlspecialchars($booking['Tanggal']);
+                        $idVal = (int)$booking['id'];
+                        $tagihanVal = (int)$booking['total_tagihan'];
+                        $terbayarVal = (int)$booking['total_bayar'];
+                        echo "<option value='{$eventVal}' data-id='{$idVal}' data-paket='{$paketVal}' data-tanggal='{$tglVal}' data-total_tagihan='{$tagihanVal}' data-total_bayar='{$terbayarVal}'>{$eventVal}</option>";
                     }
                     ?>
                 </select>
@@ -131,6 +152,21 @@
                     <input type="number" name="Nominal" class="form-control" placeholder="0" min="0" step="1" value="<?= isset($data_edit) ? $data_edit['Nominal'] : '' ?>" required>
                 </div>
             </div>
+            <input type="hidden" name="booking_id" id="booking-id-input" value="">
+             <!-- Info Status Pembayaran untuk event terpilih -->
+             <div class="col-12">
+                 <div id="payment-info" class="alert alert-light border d-flex justify-content-between align-items-center" role="alert" style="display:none">
+                     <div>
+                         <strong>Status:</strong> <span id="payment-status-text">-</span>
+                     </div>
+                     <div>
+                         <strong>Sisa belum dibayar:</strong> <span id="payment-remaining-text">Rp 0</span>
+                     </div>
+                 </div>
+                 <div id="paid-notice" class="alert alert-success" role="alert" style="display:none">
+                     <i class="fas fa-check-circle me-1"></i> Event ini sudah dibayar lunas.
+                 </div>
+             </div>
             <div class="col-md-1 d-grid">
                 <?php if (isset($data_edit)) { ?>
                     <button type="submit" class="btn btn-success">
@@ -165,18 +201,21 @@
                     <tbody>
                         <?php
                         $eventFilter = isset($_GET['event']) ? trim($_GET['event']) : '';
+                        $startDate = isset($_GET['start']) ? trim($_GET['start']) : '';
+                        $endDate = isset($_GET['end']) ? trim($_GET['end']) : '';
+
+                        $where = [];
                         if ($eventFilter !== '') {
-                            $sql = "SELECT * FROM penerimaan_kas WHERE Event_WLE LIKE CONCAT('%', ?, '%') ORDER BY Tanggal_Input DESC";
-                            if ($stmt = mysqli_prepare($conn, $sql)) {
-                                mysqli_stmt_bind_param($stmt, 's', $eventFilter);
-                                mysqli_stmt_execute($stmt);
-                                $result = mysqli_stmt_get_result($stmt);
-                            } else {
-                                $result = false;
-                            }
-                        } else {
-                            $result = mysqli_query($conn, "SELECT * FROM penerimaan_kas ORDER BY Tanggal_Input DESC");
+                            $where[] = "Event_WLE LIKE '%" . mysqli_real_escape_string($conn, $eventFilter) . "%'";
                         }
+                        if ($startDate !== '') {
+                            $where[] = "Tanggal_Input >= '" . mysqli_real_escape_string($conn, $startDate) . "'";
+                        }
+                        if ($endDate !== '') {
+                            $where[] = "Tanggal_Input <= '" . mysqli_real_escape_string($conn, $endDate) . "'";
+                        }
+                        $whereSql = count($where) ? ('WHERE ' . implode(' AND ', $where)) : '';
+                        $result = mysqli_query($conn, "SELECT * FROM penerimaan_kas $whereSql ORDER BY Tanggal_Input DESC");
 
                         while ($result && ($row = mysqli_fetch_assoc($result))) {
                             echo "<tr>
@@ -266,24 +305,80 @@
     </form>
 </section>
 <script>
-    const paket_prices = {
-        'Silver': 1000000,
-        'Gold': 2000000,
-        'Diamond': 3000000,
-        'Platinum': 4000000
-    };
+    // Format angka ke Rupiah sederhana
+    function formatRupiah(num) {
+        num = Math.max(0, Number(num) || 0);
+        return 'Rp ' + num.toLocaleString('id-ID');
+    }
 
+    // Saat event dipilih, isi tanggal & keterangan, dan tampilkan status pembayaran + sisa tagihan
     document.getElementById('event-select').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         const eventName = this.value;
         const paket = selectedOption.getAttribute('data-paket');
-        const harga = paket_prices[paket] || 0;
         const tanggal = selectedOption.getAttribute('data-tanggal');
+        const bookingId = selectedOption.getAttribute('data-id');
+        const totalTagihan = parseInt(selectedOption.getAttribute('data-total_tagihan') || '0', 10);
+        const totalBayar = parseInt(selectedOption.getAttribute('data-total_bayar') || '0', 10);
 
-        document.querySelector('input[name="Tanggal_Input"]').value = tanggal;
-        document.querySelector('input[name="Keterangan"]').value = "Booking - " + eventName + " (" + paket + ")";
-        document.querySelector('input[name="Nominal"]').value = harga;
+        document.querySelector('input[name="Tanggal_Input"]').value = tanggal || '';
+        document.querySelector('input[name="Keterangan"]').value = "Pembayaran Booking - " + eventName + (paket ? " (" + paket + ")" : "");
+        const bookingIdInput = document.getElementById('booking-id-input');
+        if (bookingIdInput) bookingIdInput.value = bookingId || '';
+
+        // Hitung status dan sisa
+        let status = 'belum bayar';
+        if (totalBayar > 0 && totalBayar < totalTagihan) status = 'dibayar sebagian';
+        if (totalTagihan > 0 && totalBayar >= totalTagihan) status = 'sudah bayar';
+        const sisa = Math.max(0, totalTagihan - totalBayar);
+
+        // Tampilkan info
+        const infoBox = document.getElementById('payment-info');
+        const statusText = document.getElementById('payment-status-text');
+        const remainingText = document.getElementById('payment-remaining-text');
+        statusText.textContent = status;
+        remainingText.textContent = formatRupiah(sisa).replace('Rp ', 'Rp ');
+        infoBox.style.display = '';
+
+        // Tampilkan notifikasi lunas jika sudah_bayar
+        const paidNotice = document.getElementById('paid-notice');
+        if (paidNotice) paidNotice.style.display = (status === 'sudah bayar') ? '' : 'none';
+
+        // Overpay protection: set max nominal dan beri hint
+        const nominalEl = document.querySelector('input[name="Nominal"]');
+        if (nominalEl) {
+            nominalEl.max = String(sisa > 0 ? sisa : '');
+            nominalEl.placeholder = sisa > 0 ? ("Maks " + sisa.toLocaleString('id-ID')) : nominalEl.placeholder;
+        }
     });
+
+    // Cegah overpay saat submit (soft guard: warning, bisa lanjut)
+    (function(){
+        const form = document.querySelector('form[action="functions/kas_masuk_tambah.php"]');
+        if (!form) return;
+        form.addEventListener('submit', function(e){
+            const remainingText = document.getElementById('payment-remaining-text');
+            const nominalEl = form.querySelector('input[name="Nominal"]');
+            const statusTextEl = document.getElementById('payment-status-text');
+            if (!remainingText || !nominalEl) return;
+            const sisaStr = remainingText.textContent.replace(/[^0-9]/g, '');
+            const sisa = parseInt(sisaStr || '0', 10);
+            const nominal = parseInt(nominalEl.value || '0', 10);
+            if (sisa > 0 && nominal > sisa) {
+                const ok = confirm('Nominal melebihi sisa. Tetap simpan?');
+                if (!ok) {
+                    e.preventDefault();
+                }
+            }
+            const statusTxt = statusTextEl ? (statusTextEl.textContent || '').toLowerCase() : '';
+            if (statusTxt.includes('sudah')) {
+                const okPaid = confirm('Event ini sudah dibayar lunas. Tetap simpan pembayaran?');
+                if (!okPaid) {
+                    e.preventDefault();
+                }
+            }
+        });
+    })();
 </script>
 <script>
 function closeHeart() {

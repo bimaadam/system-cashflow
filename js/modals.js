@@ -63,16 +63,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const tanggal = btnEditBooking.dataset.tanggal;
             const eventName = btnEditBooking.dataset.event;
             const paket = btnEditBooking.dataset.paket;
+            const paymentStatus = btnEditBooking.dataset.payment_status;
+            const totalTagihan = btnEditBooking.dataset.total_tagihan;
 
             const idEl = document.getElementById('edit-id-booking');
             const tglEl = document.getElementById('edit-tanggal-booking');
             const evtEl = document.getElementById('edit-event-booking');
             const paketEl = document.getElementById('edit-paket-booking');
+            const payEl = document.getElementById('edit-payment-status');
+            const tagihanEl = document.getElementById('edit-total-tagihan');
+            const uangMukaEl = document.getElementById('edit-uang-muka');
             if (idEl && tglEl && evtEl && paketEl) {
                 idEl.value = id ?? '';
                 tglEl.value = tanggal ?? '';
                 evtEl.value = eventName ?? '';
                 paketEl.value = paket ?? '';
+                if (payEl) payEl.value = paymentStatus ?? 'belum_bayar';
+                if (tagihanEl) tagihanEl.value = totalTagihan ?? 0;
+                // uang muka opsional saat edit: kosongkan default agar tidak terjadi duplikasi DP
+                if (uangMukaEl) uangMukaEl.value = '';
             }
 
             const modalEl = document.getElementById('editBookingModal');

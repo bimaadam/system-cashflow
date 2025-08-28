@@ -108,6 +108,27 @@
                         </select>
                     </div>
 
+                    <!-- Status Pembayaran -->
+                    <div class="col-md-3">
+                        <label for="payment_status" class="form-label"><i class="fas fa-money-bill-wave me-1"></i>Status Pembayaran</label>
+                        <select name="payment_status" id="payment_status" class="form-select border-primary shadow-sm">
+                            <option value="belum_bayar" selected>Belum Bayar</option>
+                            <option value="dibayar_sebagian">Dibayar Sebagian</option>
+                            <option value="sudah_bayar">Sudah Bayar</option>
+                        </select>
+                    </div>
+
+                    <!-- Total Tagihan (opsional) -->
+                    <div class="col-md-3">
+                        <label for="total_tagihan" class="form-label"><i class="fas fa-receipt me-1"></i>Total Tagihan (Rp)</label>
+                        <input type="number" name="total_tagihan" id="total_tagihan" class="form-control border-primary shadow-sm" placeholder="0" min="0" step="1">
+                    </div>
+                    <!-- Uang Muka (opsional) -->
+                    <div class="col-md-3">
+                        <label for="uang_muka" class="form-label"><i class="fas fa-hand-holding-usd me-1"></i>Uang Muka (Rp) - Opsional</label>
+                        <input type="number" name="uang_muka" id="uang_muka" class="form-control border-primary shadow-sm" placeholder="0" min="0" step="1">
+                    </div>
+
                     <!-- Tombol -->
                     <div class="col-md-2 d-grid">
                         <label class="form-label invisible">.</label>
@@ -164,24 +185,59 @@
                             <th>Tanggal Booking</th>
                             <th>Nama Event</th>
                             <th>Paket</th>
+                            <th>Total Tagihan</th>
+                            <th>Status Pembayaran</th>
+                            <th>Sisa Pembayaran</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php
-                        $data_booking = mysqli_query($conn, "SELECT * FROM jadwal_booking ORDER BY Tanggal DESC");
+                        $data_booking = mysqli_query($conn, "
+                            SELECT b.*, 
+                                   COALESCE(b.total_tagihan, 0) AS total_tagihan,
+                                   COALESCE((SELECT SUM(pk.Nominal) FROM penerimaan_kas pk 
+                                            WHERE pk.booking_id = b.id OR (pk.booking_id IS NULL AND pk.Event_WLE = b.Event)
+                                   ), 0) AS total_bayar
+                            FROM jadwal_booking b
+                            ORDER BY b.Tanggal DESC
+                        ");
                         while ($row = mysqli_fetch_assoc($data_booking)) {
+                            $tagihan = isset($row['total_tagihan']) ? (int)$row['total_tagihan'] : 0;
+                            $terbayar = isset($row['total_bayar']) ? (int)$row['total_bayar'] : 0;
+                            // Hitung status dinamis berdasarkan total_tagihan vs total_bayar
+                            $computedStatus = 'belum_bayar';
+                            if ($tagihan > 0 && $terbayar >= $tagihan) {
+                                $computedStatus = 'sudah_bayar';
+                            } elseif ($terbayar > 0 && $terbayar < $tagihan) {
+                                $computedStatus = 'dibayar_sebagian';
+                            } else {
+                                $computedStatus = 'belum_bayar';
+                            }
+                            // Fallback ke payment_status tersimpan jika tagihan = 0
+                            $pay = ($tagihan > 0) ? $computedStatus : (isset($row['payment_status']) ? $row['payment_status'] : 'belum_bayar');
+                            $badgeClass = 'bg-secondary';
+                            if ($pay === 'belum_bayar') $badgeClass = 'bg-danger';
+                            if ($pay === 'dibayar_sebagian') $badgeClass = 'bg-warning text-dark';
+                            if ($pay === 'sudah_bayar') $badgeClass = 'bg-success';
+                            $sisa = max(0, $tagihan - $terbayar);
                             echo "<tr>
                                     <td>{$row['Tanggal']}</td>
                                     <td>{$row['Event']}</td>
                                     <td>{$row['Paket']}</td>
+                                    <td>Rp " . number_format($tagihan, 0, ',', '.') . "</td>
+                                    <td><span class='badge {$badgeClass}'>" . htmlspecialchars(str_replace('_',' ',$pay)) . "</span></td>
+                                    <td><strong class='text-danger'>Rp " . number_format($sisa, 0, ',', '.') . "</strong></td>
                                     <td>
                                 <a href='functions/booking_hapus.php?id={$row['id']}&redirect=dashboard.php?tab=booking' class='btn btn-danger btn-sm' onclick=\"return confirm('Yakin ingin menghapus data ini?')\">Hapus</a>
                                 <button class='btn btn-sm btn-warning btn-edit-booking' 
                                     data-id='{$row['id']}' 
                                     data-tanggal='{$row['Tanggal']}'
                                     data-event='{$row['Event']}'
-                                    data-paket='{$row['Paket']}'>
+                                    data-paket='{$row['Paket']}'
+                                    data-payment_status='{$pay}'
+                                    data-total_tagihan='{$tagihan}'
+                                    >
                                             <i class='fas fa-edit'></i> Edit
                                         </button>
                                     </td>
@@ -223,6 +279,21 @@
                                 <option value="Platinum">Platinum</option>
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label for="edit-total-tagihan" class="form-label">Total Tagihan (Rp)</label>
+                            <input type="number" name="total_tagihan" id="edit-total-tagihan" class="form-control" placeholder="0" min="0" step="1">
+                        </div>
+                        <div class="alert alert-info">
+                            Pembayaran tambahan/termin silakan input dari menu <strong>Kas Masuk</strong>. Field Uang Muka tidak tersedia pada edit untuk menghindari duplikasi pembayaran.
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-payment-status" class="form-label">Status Pembayaran</label>
+                            <select name="payment_status" id="edit-payment-status" class="form-select">
+                                <option value="belum_bayar">Belum Bayar</option>
+                                <option value="dibayar_sebagian">Dibayar Sebagian</option>
+                                <option value="sudah_bayar">Sudah Bayar</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -233,7 +304,7 @@
         </div>
     </div>
 </section>
-<<script>
+<script>
 function closeHeart() {
     const alertBox = document.getElementById("heartAlert");
     if (alertBox) {

@@ -54,6 +54,28 @@ Beberapa perubahan signifikan telah diimplementasikan untuk meningkatkan fungsio
 -   **Pembaruan Skema Database:**
     *   Kolom `role` pada tabel `users` telah diperbarui untuk menyertakan nilai `'owner'` sebagai opsi yang valid. Ini memastikan sistem dapat mengenali dan mengelola peran Owner dengan benar.
 
+## Perubahan Terbaru (Agustus 2025) – Alur Booking & Pembayaran
+
+- __Alur Pembayaran Dipermudah__
+  - Tambah Booking: bisa isi Uang Muka (DP) satu kali; otomatis tercatat ke `Kas Masuk` dengan Keterangan standar.
+  - Edit Booking: field Uang Muka dihapus untuk mencegah duplikasi pembayaran. Pembayaran berikutnya/pelunasan dilakukan via halaman `Kas Masuk`.
+  - Auto-pelunasan hanya terjadi saat status pembayaran diubah dari belum lunas menjadi "Sudah Bayar".
+
+- __Standarisasi Keterangan Pembayaran__
+  - DP: `DP Booking - {Event} (Paket)`
+  - Pembayaran (manual via Kas Masuk): `Pembayaran Booking - {Event} (Paket)`
+  - Pelunasan (otomatis): `Pelunasan Booking - {Event} (Paket)`
+
+- __Peningkatan Halaman Kas Masuk__
+  - Saat memilih Event, Keterangan terisi otomatis sesuai format di atas dan menampilkan status + sisa pembayaran.
+  - Ada notifikasi jika Event sudah lunas dan konfirmasi jika tetap ingin menambah pembayaran (proteksi overpayment).
+
+- __Konsistensi Data__
+  - Pembayaran yang dibuat otomatis dari Booking ditautkan ke Booking melalui kolom `booking_id`.
+  - Disediakan utilitas backfill untuk menyeragamkan Keterangan lama: `functions/backfill_keterangan.php`.
+    - Preview (tanpa mengubah data): `functions/backfill_keterangan.php?dry=1`
+    - Jalankan update: `functions/backfill_keterangan.php`
+
 ## Cara Menjalankan (XAMPP/LAMPP)
 1. __Siapkan Server__
    - Jalankan Apache & MySQL.
