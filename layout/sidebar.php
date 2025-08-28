@@ -68,6 +68,12 @@ function sidebar_link_class($target, $base_class = 'nav-link') {
                 <?php endif; ?>
 
                 <div class="sb-sidenav-menu-heading">Transaksi</div>
+                <?php if (is_allowed($_SESSION['user_role'], 'booking')): ?>
+                <a class="<?= sidebar_link_class('booking') ?>" href="?tab=booking" <?= $current_tab === 'booking' ? 'aria-current="page"' : '' ?>>
+                    <div class="sb-nav-link-icon"><i class="fas fa-calendar-alt"></i></div>
+                    Jadwal Booking
+                </a>
+                <?php endif; ?>
                 <?php if (is_allowed($_SESSION['user_role'], 'kas_masuk')): ?>
                 <a class="<?= sidebar_link_class('kas_masuk') ?>" href="?tab=kas_masuk" <?= $current_tab === 'kas_masuk' ? 'aria-current="page"' : '' ?>>
                     <div class="sb-nav-link-icon"><i class="fas fa-arrow-down"></i></div>
@@ -78,12 +84,6 @@ function sidebar_link_class($target, $base_class = 'nav-link') {
                 <a class="<?= sidebar_link_class('kas_keluar') ?>" href="?tab=kas_keluar" <?= $current_tab === 'kas_keluar' ? 'aria-current="page"' : '' ?>>
                     <div class="sb-nav-link-icon"><i class="fas fa-arrow-up"></i></div>
                     Kas Keluar
-                </a>
-                <?php endif; ?>
-                <?php if (is_allowed($_SESSION['user_role'], 'booking')): ?>
-                <a class="<?= sidebar_link_class('booking') ?>" href="?tab=booking" <?= $current_tab === 'booking' ? 'aria-current="page"' : '' ?>>
-                    <div class="sb-nav-link-icon"><i class="fas fa-calendar-alt"></i></div>
-                    Jadwal Booking
                 </a>
                 <?php endif; ?>
 
